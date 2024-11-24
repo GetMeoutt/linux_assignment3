@@ -2,116 +2,110 @@
 Name : Noppanat Sripan
 Student ID : A01373963
 
-this is read me for assignment 3
 
+This repository is a tutorial on setting up a Bash script to generate a static index.html file with system information daily at 05:00 using a systemd service and timer. The generated file is served by an Nginx web server running on an Arch Linux droplet, with UFW configured for firewall protection.
 
-
-## 0. Prerequisites
-this is the starting of the tutorial, you will need this following resource/package in order to create a website that auto generate static html
-
-package needed :
-1. `git` to clone to repository 
-2. `nginx` to host a webserver
-3. `ufw` to control the firewall ( control port communication )
-
-to install the package: 
-```bash
-sudo pacman -S <packagename>
-```
-
-since in this tutorial, you will need to use the resource from this repository, you will need to do the following command
-```bash
-git clone https://github.com/GetMeoutt/linux_assignment3.git
-```
-
-this will clone the folder `linux_assignment3` to your directory, it includes the files the you will need in order to complete the following step.  
-
-files in the repository 
+## Features
+- Automates daily generation of a static `index.html` with system information.
+- Uses `systemd` service and timer for scheduling.
+- Serves the HTML file through an Nginx web server.
+- Implements UFW to secure the server.
+<br>
+## Files
 - `generate-index.service` : control the script/process `generate_index`
 - `generate-index.timer` : control the time to run  `generate-index.service
 - `generate_index` : bash script which will generate html file when run 
 - `nginx.conf` :  config file for package nginx
 - `webgenServer.conf` : config for webserver
 <br>
+## Requirement 
+- package
+	1. `git` to clone to repository 
+	2. `nginx` to host a webserver
+	3. `ufw` to control the firewall ( control port communication )
 
-## 1. Create User 
+- all files in repository (git clone)
+- arch Linux
+- `sudo` privilege 
 
-this step is to create a System user and the home directory to handle any task that related to generate a static file and host it on server IP address (include nginx)
 
-create system user `webgen`
+
+## How to Use
+in the following step by step tutorial that assuming you are in the repository folder 
+**The step including** 
+1. create user
+2. config `Systemd`
+3. setup `nginx`
+4. setup `ufw`
+
+<br>
+
+### 1. Create User 
+this step is to create a System user `webgen` and the home directory (including sub folder) to make `webgen` handle any task that related to generate a static file 
+
+Home directory structure
+```text
+/var/lib/webgen
+|
+|_____/bin
+|       └-generate_index
+|_____/HTML
+		└-index
+```
+- `bin` folder is going to be the place where we put the script ``generate_index`` and execute it from `.service` file
+- `HTML` is folder a that store HTML file that is created by `generate_index`
+
+
+1. create system user `webgen`
 ```bash
 useradd -r -d /var/lib/webgen -m webgen -s /usr/bin/nologin
 ```
-`useradd` : to create user <br>
-	`-r` to create a system user <br>
-	`-d` to sets the path of home directory <br>
-	`-m` to create home directory <br>
-	`-s` to sets the path to the user's login shell <br>
+
+2. create `bin`  inside `webgen`  home directory
+```bash
+sudo mkdir /var/lib/webgen/bin 
+```
+
+3. create `HTML` folder inside `webgen` home directory
+```bash
+sudo mkdir /var/lib/webgen/HTML
+```
 
 
+> [!note]
+> since we can't switch to user `webgen`, we are need to use `sudo` to create folder inside `webgen` home directory
+
+4. move file `generate_index` from repository to `bin`
+```bash 
+mv generate_index /var/lib/webgen/bin
+```
+
+5. give permission to execute the script
+```bash
+chmod +x /var/lib/webgen/bin/generate_index
+```
+
+since `webgen` user will be the person who control the script and service, we need to make it own the files in home directory 
+
+6. change the permission of the folder (include anything inside) to `webgen`
+```bash
+sudo chown -R webgen:webgen /var/lib/webgen
+```
+
+
+>[!note]
  the reason the create system user and not regular user is to isolate task and permission, reducing risk of the accidental and malicious changes
 
 >[!Tip]
 >By sperate user and give the permission to do the user only what they need, it follows  the principle of principle of least privilege (POLP): Grant only the minimum permissions necessary for a user, process, or application to perform its tasks, and nothing more
 
-
-
-### 1.1 Create Sub-folder inside `webgen` home directory
-this step is to create `bin` and `HTML` folders inside `webgen` home directory
-
-> [!note]
-> since we can't switch to user `webgen`, we are going to use `sudo` to create folder inside `webgen` home directory
-
-to create `bin`  inside `webgen`  home directory
-```bash
-sudo mkdir /var/lib/webgen/bin 
-```
-
-to create `HTML` folder inside `webgen` home directory
-```bash
-sudo mkdir /var/lib/webgen/HTML
-```
-`sudo` to elevated privileges
-`mkdir` to create folder 
-
-
-
-### 1.2 Move the bash script to `bin` directory 
-
-in the directory that you clone the repository
-```bash 
-mv generate_index /var/lib/webgen/bin
-```
-`mv` to move file
-
-give permission to execute the script
-```bash
-chmod +x /var/lib/webgen/bin/generate_index
-```
-`chmod +x` to add execute permission
-
-> [!note] 
-> this script will run by .service file and generate static HTML in the folder `/var/lib/webgen/HTML`
-
-
-### 1.3 Change Permission to `webgen` user
-since `webgen` is a user that will control service and script inside, you need to change the permission for `webgen` user
-
-```bash
-sudo chown -R webgen:webgen /var/lib/webgen
-```
-`chown` to change the file/ folder ownership
-	 `-R` to make it recursive 
-
-<br>
 <br>
 
-## 2. Create service for `generate_index` script
-in this step we will use the `generate-index.service` from the repository to set up `systemctl` to run the `generate_index`
 
+### 2. Config `Systemd`
+in this step we will use the `generate-index.service` and `enerate-index.timer`  from the repository to set up `systemd` to run the `generate_index` every day at 5 am.
 
-### 2.1 get `generate-index.service`
-as the `generate-index.service` file is provided in the repository, you should be able to do the following step, using this file. 
+as the `generate-index.service,enerate-index.timer ` file are provided in the repository, you should be able to do the following step, using this file. 
 
 the `generate-index.service` has the following content inside
 ```bash
@@ -132,33 +126,7 @@ WantedBy=multi-user.target
 
 ```
 
-
-### 2.2 Move `generate-index.service` to `systemctl`
-in this step, we will move `generate-index.service` to the `system` where `systemctl` will read from, and `systemctl` will execute from `.service` files
-
-to move `generate-index.service` to `/etc/systemd/system`
-```bash
-sudo mv generate-index.service /etc/systemd/system
-```
-
-
-start the service 
-```bash
-sudo systemctl start generate-index
-```
-after start `generate-index.service` it will execute the script `generate_index` in the `bin` folder in the `webgen` home directory
-
-
-enable the service (run when the server is start)
-```bash
-sudo system enable generate-index
-```
-
-
-### 2.3 get  `generate-index.timer`
-as the `generate-index.timer` file is provided in the repository, you should be able to do the following step, using this file. 
-
-the `generate-index.timer` has the following content inside
+the `generate-index.timer` has the following content inside 
 ```bash
 [Unit]
 Description=Gen_index_every5am # description 
@@ -173,46 +141,133 @@ WantedBy=timers.target
 
 ```
 
-### 2.4 Move `generate-index.timer` to `systemctl`
-in this step, we will move `generate-index.timer` to the `system` directory where `systemctl` will read from, and `systemctl` will execute from `.timer` file
 
-to move `generate-index.service` to `/etc/systemd/system`
+1. move `generate-index.service` to `/etc/systemd/system`
 ```bash
 sudo mv generate-index.service /etc/systemd/system
 ```
 
-start the timer 
+2. start the service 
+```bash
+sudo systemctl start generate-index
+```
+
+3. enable the service (run when the server is start)
+```bash
+sudo system enable generate-index
+```
+
+now we are done setting up the `generate-index.service` files, this should create `index.html` in the folder `HTML`
+
+next, we are going to config`generate-index.timer`
+
+4. move `generate-index.service` to `/etc/systemd/system`
+```bash
+sudo mv generate-index.service /etc/systemd/system
+```
+
+5. start the timer 
 ```bash
 sudo systemctl start generate-index.timer
 ```
-after start `generate-index.timer` it will execute the script `generate_index` in the `bin` folder in the `webgen` every day on 5 am
 
-
-enable the service (run when the server is start)
+6. enable the service (run when the server is start)
 ```bash
 sudo systemctl enable generate-index
 ```
 
-### 2.5 Check the status
-
-to check if `.service` and `.timer` is run successfully
-```bash
-sudo systemctl status generate-index
-```
-
-and to check status of timer 
-```bash
-sudo systemctl status generate-index.timer
-```
-
-finally, to check if the `.timer` is running
+7. finally, to check if the `.timer` is running
 ```bash
 sudo systemctl list timer
 ```
 this will shows the list of timer that currently running on your system
 
 
-> [!tip]
-> if the error shows on the status, use `journal` to check the log of service or timer file
+> [!troubleshoot]
+> if the error shows on the status, use `journal -ex` to check the log of service or timer file or use `sudo systemctl status <process/timer_name>`
+
+### 3. Set up Nginx
+in this step, you will set up the nginx using the file `nginx.conf` in this repository (make sure `nginx` is downloaded)
+
+the `niginx.conf` have the following content 
+(the following setting are from https://wiki.archlinux.org/title/Nginx)
+```text
+user webgen;
+worker_processes auto;
+worker_cpu_affinity auto;
+
+events {
+    multi_accept on;
+    worker_connections 1024;
+}
+
+http {
+    charset utf-8;
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+    server_tokens off;
+    log_not_found off;
+    types_hash_max_size 4096;
+    client_max_body_size 16M;
+
+    # MIME
+    include mime.types;
+    default_type application/octet-stream;
+
+    # logging
+    access_log /var/log/nginx/access.log;
+    error_log /var/log/nginx/error.log warn;
+
+    # load configs
+    include /etc/nginx/conf.d/*.conf;
+    include /etc/nginx/sites-enabled/*;
+}
+```
+
+1. make `nginx` back-up file
+```bash
+sudo cp /etc/nginx/nginx.conf /etc/nginx/nginx_backup.conf
+```
+
+>[!note]
+>the reason that we are making nginx backup is to avoid the error that can happen from the new nginx.conf, since we made the backup then we can go back and use default setting anytime
+
+2. move the `nginx.conf` from repository to `/etc/nginx/`
+```bash
+sudo mv nginx.conf /etc/nginx/
+```
+
+3. make folder contain server configuration
+```bash
+sudo mkdir /etc/nginx/sites-available
+sudo mkdir /etc/nginx/sites-enabled
+```
+
+4. move the `webgenServer.conf` sites-available 
+```bash
+sudo mv webgenServer.conf /etc/nginx/sites-available
+```
+
+5. create symbolic link from `webgenServer.conf` in sites-enable pointing to sites-available
+```bash
+sudo ln -s /etc/nginx/sites-available/webgenServer.conf /etc/nginx/sites-enabled/webgenServer.conf
+```
+
+6.  start the `nginx` and make it start when server boost
+```bash
+sudo systemctl start nginx
+sudo systemctl enable nginx
+```
+
+After you done everything, it will create a website from your droplet (arch linux) ip address showing information of your system (port 80)
+
+>[! why sperate server block]
+>
 
 
+
+>[!troubleshoot]
+>`sudo nginx -t` to check the syntax and text the file
+> `sudo systemctl status nginx` to check the status of the process
+> `journal -ex nginx` to see the log file of the process

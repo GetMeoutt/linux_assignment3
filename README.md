@@ -3,7 +3,7 @@ Name : Noppanat Sripan
 Student ID : A01373963
 
 
-This tutorial explains how to create a Bash script that generates a static index.html file with system information daily at 05:00. It uses a systemd service and timer on an Arch Linux droplet with an Nginx web server and UFW for firewall protection.
+This tutorial explains how to setting up a Bash script that generates a static index.html file with system information daily at 05:00. It uses a systemd service and timer on an Arch Linux droplet with an Nginx web server and UFW for firewall protection.
 
 ## Features
 - Automates daily generation of a static `index.html` with system information.
@@ -94,7 +94,7 @@ sudo chown -R webgen:webgen /var/lib/webgen
 >[!Tip]
 >By sperate user and give the permission to do the user only what they need, it follows  the principle of principle of least privilege (POLP): Grant only the minimum permissions necessary for a user, process, or application to perform its tasks, and nothing more
 
-
+https://www.techtarget.com/searchsecurity/definition/principle-of-least-privilege-POLP
 
 
 ### 2. Config `Systemd`
@@ -267,7 +267,7 @@ https://serverfault.com/questions/527630/difference-in-sites-available-vs-sites-
 
 https://wiki.archlinux.org/title/Nginx
 
->[!troubleshoot]
+>[!note]
 >`sudo nginx -t` to check the syntax and test the file
 > `sudo systemctl status nginx` to check the status of the process
 > `journal -ex -u nginx` to see the log file of the process

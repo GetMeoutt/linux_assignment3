@@ -3,21 +3,21 @@ Name : Noppanat Sripan
 Student ID : A01373963
 
 
-This repository is a tutorial on setting up a Bash script to generate a static index.html file with system information daily at 05:00 using a systemd service and timer. The generated file is served by an Nginx web server running on an Arch Linux droplet, with UFW configured for firewall protection.
+This tutorial explains how to create a Bash script that generates a static index.html file with system information daily at 05:00. It uses a systemd service and timer on an Arch Linux droplet with an Nginx web server and UFW for firewall protection.
 
 ## Features
 - Automates daily generation of a static `index.html` with system information.
 - Uses `systemd` service and timer for scheduling.
-- Serves the HTML file through an Nginx web server.
-- Implements UFW to secure the server.
-<br>
+- Display the HTML file through an Nginx web server.
+- Use UFW to secure the server.
+
 ## Files
 - `generate-index.service` : control the script/process `generate_index`
 - `generate-index.timer` : control the time to update the script
 - `generate_index` : generate html file (contain your system info)
 - `nginx.conf` :  config file for package nginx
 - `webgenServer.conf` : config for webserver
-<br>
+
 ## Requirement 
 - Packages:
    1. `git` to clone the repository.
@@ -39,7 +39,6 @@ In the following step-by-step tutorial, assuming you are in the repository folde
 3. Set up `nginx`.
 4. Set up `ufw`.
 
-<br>
 
 ### 1. Create User
 this step is to create a System user `webgen` and the home directory (including sub folder) to make `webgen` handle any task that related to generate a static file 
@@ -95,7 +94,7 @@ sudo chown -R webgen:webgen /var/lib/webgen
 >[!Tip]
 >By sperate user and give the permission to do the user only what they need, it follows  the principle of principle of least privilege (POLP): Grant only the minimum permissions necessary for a user, process, or application to perform its tasks, and nothing more
 
-<br>
+
 
 
 ### 2. Config `Systemd`
@@ -312,7 +311,7 @@ sudo ufw status verbose
 ```
 this should show the following configuration:
 
-`[pichere]`
+![ufw_status](assets/ufw_status.png)
 
 explanation 
 - **allow** (ipv4 and ipv6) port 22 (SSH) but **limit** the ssh times, any IP address can ssh
@@ -322,7 +321,7 @@ explanation
 ## DONE
 you are done setting up everything, now try to access the website from your droplet IP address. This should show your information about your system. 
 
-[pichere]
+![website_UI](assets/webpage_outcome.png)
 
 
 

@@ -13,34 +13,35 @@ This repository is a tutorial on setting up a Bash script to generate a static i
 <br>
 ## Files
 - `generate-index.service` : control the script/process `generate_index`
-- `generate-index.timer` : control the time to run  `generate-index.service
-- `generate_index` : bash script which will generate html file when run 
+- `generate-index.timer` : control the time to update the script
+- `generate_index` : generate html file (contain your system info)
 - `nginx.conf` :  config file for package nginx
 - `webgenServer.conf` : config for webserver
 <br>
 ## Requirement 
-- package
-	1. `git` to clone to repository 
-	2. `nginx` to host a webserver
-	3. `ufw` to control the firewall ( control port communication )
+- Packages:
+   1. `git` to clone the repository.
+   2. `nginx` to host a web server.
+   3. `ufw` to control the firewall.
 
-- all files in repository (git clone)
-- arch Linux
-- `sudo` privilege 
+- All files in the repository (use git clone).
+- Arch Linux.
+- Sudo privileges.
+
 
 
 
 ## How to Use
-in the following step by step tutorial that assuming you are in the repository folder 
-**The step including** 
-1. create user
-2. config `Systemd`
-3. setup `nginx`
-4. setup `ufw`
+In the following step-by-step tutorial, assuming you are in the repository folder.  
+**The steps include**: 
+1. Create User.
+2. Configure `Systemd`.
+3. Set up `nginx`.
+4. Set up `ufw`.
 
 <br>
 
-### 1. Create User 
+### 1. Create User
 this step is to create a System user `webgen` and the home directory (including sub folder) to make `webgen` handle any task that related to generate a static file 
 
 Home directory structure
@@ -52,7 +53,7 @@ Home directory structure
 |_____/HTML
 		└-index
 ```
-- `bin` folder is going to be the place where we put the script ``generate_index`` and execute it from `.service` file
+- `bin` folder is going to be the place where we put the script ``generate_index`` and execute it from `.service` file (systemd)
 - `HTML` is folder a that store HTML file that is created by `generate_index`
 
 
@@ -61,16 +62,11 @@ Home directory structure
 useradd -r -d /var/lib/webgen -m webgen -s /usr/bin/nologin
 ```
 
-2. create `bin`  inside `webgen`  home directory
+2. create `bin`  and `HTML` folder inside `webgen`  home directory
 ```bash
 sudo mkdir /var/lib/webgen/bin 
-```
-
-3. create `HTML` folder inside `webgen` home directory
-```bash
 sudo mkdir /var/lib/webgen/HTML
 ```
-
 
 > [!note]
 > since we can't switch to user `webgen`, we are need to use `sudo` to create folder inside `webgen` home directory
@@ -94,7 +90,7 @@ sudo chown -R webgen:webgen /var/lib/webgen
 
 
 >[!note]
- the reason the create system user and not regular user is to isolate task and permission, reducing risk of the accidental and malicious changes
+ the reason to create system user and not regular user is to isolate task and permission, reducing risk of the accidental and malicious changes
 
 >[!Tip]
 >By sperate user and give the permission to do the user only what they need, it follows  the principle of principle of least privilege (POLP): Grant only the minimum permissions necessary for a user, process, or application to perform its tasks, and nothing more
@@ -105,7 +101,7 @@ sudo chown -R webgen:webgen /var/lib/webgen
 ### 2. Config `Systemd`
 in this step we will use the `generate-index.service` and `enerate-index.timer`  from the repository to set up `systemd` to run the `generate_index` every day at 5 am.
 
-as the `generate-index.service,enerate-index.timer ` file are provided in the repository, you should be able to do the following step, using this file. 
+as the `generate-index.service,generate-index.timer ` file are provided in the repository, you should be able to do the following step, using these files. 
 
 the `generate-index.service` has the following content inside
 ```bash
@@ -134,10 +130,10 @@ Description=Gen_index_every5am # description
 [Timer]
 OnCalendar=*-*-* 05:00:00 # set the time to run every day 5 am
 
-Persistent=true
+Persistent=true # if server down on 5am, allow it to run as soon as the server start
 
 [Install]
-WantedBy=timers.target
+WantedBy=timers.target #ensure timer start automatically
 
 ```
 
@@ -183,8 +179,8 @@ sudo systemctl list timer
 this will shows the list of timer that currently running on your system
 
 
-> [!troubleshoot]
-> if the error shows on the status, use `journal -ex` to check the log of service or timer file or use `sudo systemctl status <process/timer_name>`
+> [!Tip]
+> if the error shows on the status, use `journal -ex -u <service>` to check the log of service or timer file or use `sudo systemctl status <process/timer_name>.timer`
 
 ### 3. Set up Nginx
 in this step, you will set up the nginx using the file `nginx.conf` in this repository (make sure `nginx` is downloaded)
@@ -243,6 +239,8 @@ sudo mv nginx.conf /etc/nginx/
 sudo mkdir /etc/nginx/sites-available
 sudo mkdir /etc/nginx/sites-enabled
 ```
+- `sites-available` folder is for storing _all_ of your vhost configurations, whether or not they're currently enabled.
+- `sites-enabled` folder contains symlinks to files in the sites-available folder. This allows you to selectively disable vhosts by removing the symlink.
 
 4. move the `webgenServer.conf` sites-available 
 ```bash
@@ -262,12 +260,72 @@ sudo systemctl enable nginx
 
 After you done everything, it will create a website from your droplet (arch linux) ip address showing information of your system (port 80)
 
->[! why sperate server block]
->
+**Why separate server block file?**
+Using separate server block files for virtual hosts is important because each website has its own file. This allows for easy enabling or disabling by moving files in and out of `sites-enabled`. It also simplifies configuration management by keeping files organized and easier to maintain.
 
 
+https://serverfault.com/questions/527630/difference-in-sites-available-vs-sites-enabled-vs-conf-d-directories-nginx
+
+https://wiki.archlinux.org/title/Nginx
 
 >[!troubleshoot]
->`sudo nginx -t` to check the syntax and text the file
+>`sudo nginx -t` to check the syntax and test the file
 > `sudo systemctl status nginx` to check the status of the process
-> `journal -ex nginx` to see the log file of the process
+> `journal -ex -u nginx` to see the log file of the process
+
+### 4. Set up `ufw`
+in this step, we will config the  `ufw` fire wall to:
+-  allow ssh and http from anywhere (22)
+- enable ssh rate limiting
+- allow http connections
+
+this allows http connection, since we want other people to be able to access your  website and allows port 22 for you (also other people since we didnt limit to your IP address) to be able to connect to your droplet, additional we limit the time of the fail ssh to prevent other people to brute force to the droplet. 
+
+1. enable and start the service
+```bash
+sudo systemctl enable --now ufw.service
+```
+2. set the table rule to allow ssh from anywhere
+```bash
+sudo ufw allow SSH
+```
+3. limit the incoming ssh
+```bash
+sudo ufw limit ssh
+```
+4. allow http
+```bash
+sudo ufw allow http
+```
+5. check that ssh is set in the table rules
+```bash
+sudo ufw app list
+```
+6. after make sure that ssh is in the app list, turn on firewall
+```bash
+sudo ufw enable
+```
+
+**To check the status of the firewall**
+```bash
+sudo ufw status verbose
+```
+this should show the following configuration:
+
+`[pichere]`
+
+explanation 
+- **allow** (ipv4 and ipv6) port 22 (SSH) but **limit** the ssh times, any IP address can ssh
+- **allow** (ipv4 and ipv6)port 80 (http) from any ip 
+
+
+## DONE
+you are done setting up everything, now try to access the website from your droplet IP address. This should show your information about your system. 
+
+[pichere]
+
+
+
+
+
+## 

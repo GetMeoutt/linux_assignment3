@@ -320,7 +320,7 @@ explanation
 
 ## DONE
 you are done setting up everything, you can now try to access the website from your droplet IP address. This should show your information about your system. 
-
+example: http://209.38.132.118/
 ![website_UI](assets/webpage_outcome.png)
 
 

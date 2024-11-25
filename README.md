@@ -3,7 +3,7 @@ Name : Noppanat Sripan
 Student ID : A01373963
 
 
-This tutorial explains how to setting up a Bash script that generates a static index.html file with system information daily at 05:00. It uses a systemd service and timer on an Arch Linux droplet with an Nginx web server and UFW for firewall protection.
+This tutorial explains how to set up a Bash script that generates a static index.html file with system information daily at 05:00. It uses a systemd service and timer on an Arch Linux droplet with an Nginx web server and UFW for firewall protection.
 
 ## Features
 - Automates daily generation of a static `index.html` with system information.
@@ -32,16 +32,16 @@ This tutorial explains how to setting up a Bash script that generates a static i
 
 
 ## How to Use
-In the following step-by-step tutorial, assuming you are in the repository folder.  
-**The steps include**: 
+Assuming you are in the repository folder, 
+**Follow the steps**: 
 1. Create User.
-2. Configure `Systemd`.
+2. Configure `systemd`.
 3. Set up `nginx`.
 4. Set up `ufw`.
 
 
 ### 1. Create User
-this step is to create a System user `webgen` and the home directory (including sub folder) to make `webgen` handle any task that related to generate a static file 
+this step is to create a System user `webgen` and the home directory (including the sub-folder) to make `webgen` handle any tasks that is related to generate a static file 
 
 Home directory structure
 ```text
@@ -50,7 +50,7 @@ Home directory structure
 |_____/bin
 |       └-generate_index
 |_____/HTML
-		└-index
+        └-index
 ```
 - `bin` folder is going to be the place where we put the script ``generate_index`` and execute it from `.service` file (systemd)
 - `HTML` is folder a that store HTML file that is created by `generate_index`
@@ -68,7 +68,7 @@ sudo mkdir /var/lib/webgen/HTML
 ```
 
 > [!note]
-> since we can't switch to user `webgen`, we are need to use `sudo` to create folder inside `webgen` home directory
+> since we can't switch to user `webgen`, we need to use `sudo` to create the folder inside `webgen` home directory
 
 4. move file `generate_index` from repository to `bin`
 ```bash 
@@ -80,27 +80,27 @@ mv generate_index /var/lib/webgen/bin
 chmod +x /var/lib/webgen/bin/generate_index
 ```
 
-since `webgen` user will be the person who control the script and service, we need to make it own the files in home directory 
+since `webgen` user will be the person who controls the script and service, we need to change the ownership of the files in the home directory 
 
-6. change the permission of the folder (include anything inside) to `webgen`
+6. change the permission of the folder (and include anything inside) to `webgen`
 ```bash
 sudo chown -R webgen:webgen /var/lib/webgen
 ```
 
 
 >[!note]
- the reason to create system user and not regular user is to isolate task and permission, reducing risk of the accidental and malicious changes
+ the reason to create a system user and not regular user is to isolate task and permission, reducing the risks of accidental errors and malicious changes
 
 >[!Tip]
->By sperate user and give the permission to do the user only what they need, it follows  the principle of principle of least privilege (POLP): Grant only the minimum permissions necessary for a user, process, or application to perform its tasks, and nothing more
+>By separate user and give the permission to do the user only what they need, it follows the principle of principle of least privilege (POLP): Grant only the minimum permissions necessary for a user, process, or application to perform its tasks, and nothing more
 
 https://www.techtarget.com/searchsecurity/definition/principle-of-least-privilege-POLP
 
 
-### 2. Config `Systemd`
-in this step we will use the `generate-index.service` and `enerate-index.timer`  from the repository to set up `systemd` to run the `generate_index` every day at 5 am.
+### 2. Config `systemd`
+in this step we will use the `generate-index.service` and `generate-index.timer`  from the repository to set up `systemd` to run the `generate_index` every day at 5 am.
 
-as the `generate-index.service,generate-index.timer ` file are provided in the repository, you should be able to do the following step, using these files. 
+as the `generate-index.service,generate-index.timer ` files are provided in the repository, you should be able to do the following steps.
 
 the `generate-index.service` has the following content inside
 ```bash
@@ -152,9 +152,9 @@ sudo systemctl start generate-index
 sudo system enable generate-index
 ```
 
-now we are done setting up the `generate-index.service` files, this should create `index.html` in the folder `HTML`
+now that we are done setting up the `generate-index.service` file, this should create `index.html` in the folder `HTML`
 
-next, we are going to config`generate-index.timer`
+next, we are going to configure the `generate-index.timer` file.
 
 4. move `generate-index.service` to `/etc/systemd/system`
 ```bash
@@ -175,7 +175,7 @@ sudo systemctl enable generate-index
 ```bash
 sudo systemctl list timer
 ```
-this will shows the list of timer that currently running on your system
+this will show the list of timers that are currently running on your system
 
 
 > [!Tip]
@@ -184,7 +184,7 @@ this will shows the list of timer that currently running on your system
 ### 3. Set up Nginx
 in this step, you will set up the nginx using the file `nginx.conf` in this repository (make sure `nginx` is downloaded)
 
-the `niginx.conf` have the following content 
+the `nginx.conf` have the following content 
 (the following setting are from https://wiki.archlinux.org/title/Nginx)
 ```text
 user webgen;
@@ -226,9 +226,9 @@ sudo cp /etc/nginx/nginx.conf /etc/nginx/nginx_backup.conf
 ```
 
 >[!note]
->the reason that we are making nginx backup is to avoid the error that can happen from the new nginx.conf, since we made the backup then we can go back and use default setting anytime
+>the reason that we are making nginx backup is to avoid any errors created with the new nginx.conf and be able to go back to the default settings if needed
 
-2. move the `nginx.conf` from repository to `/etc/nginx/`
+2. move the `nginx.conf` from the repository to `/etc/nginx/`
 ```bash
 sudo mv nginx.conf /etc/nginx/
 ```
@@ -257,7 +257,7 @@ sudo systemctl start nginx
 sudo systemctl enable nginx
 ```
 
-After you done everything, it will create a website from your droplet (arch linux) ip address showing information of your system (port 80)
+After you done everything, this will create a website from your droplet (arch linux) ip address showing information of your system (port 80)
 
 **Why separate server block file?**
 Using separate server block files for virtual hosts is important because each website has its own file. This allows for easy enabling or disabling by moving files in and out of `sites-enabled`. It also simplifies configuration management by keeping files organized and easier to maintain.
@@ -273,12 +273,12 @@ https://wiki.archlinux.org/title/Nginx
 > `journal -ex -u nginx` to see the log file of the process
 
 ### 4. Set up `ufw`
-in this step, we will config the  `ufw` fire wall to:
--  allow ssh and http from anywhere (22)
+in this step, we will config the `ufw` firewall to:
+- allow ssh and http from anywhere (22)
 - enable ssh rate limiting
 - allow http connections
 
-this allows http connection, since we want other people to be able to access your  website and allows port 22 for you (also other people since we didnt limit to your IP address) to be able to connect to your droplet, additional we limit the time of the fail ssh to prevent other people to brute force to the droplet. 
+this configuration enables http connection, allowing other people to access your website. It also allows SSH access for you to be able to connect to your droplet (this also allows other people to connect, since we didn't limit it to your IP address). Additionally, we want to limit the failed login attempts to prevent other people to brute-force attack the droplet. 
 
 1. enable and start the service
 ```bash
@@ -319,7 +319,7 @@ explanation
 
 
 ## DONE
-you are done setting up everything, now try to access the website from your droplet IP address. This should show your information about your system. 
+you are done setting up everything, you can now try to access the website from your droplet IP address. This should show your information about your system. 
 
 ![website_UI](assets/webpage_outcome.png)
 
